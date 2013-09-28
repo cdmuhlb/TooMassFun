@@ -19,3 +19,9 @@ libraries and build tools:
 * Make
 * [GSL (GNU Scientific Library)](http://www.gnu.org/software/gsl/)
 * [OpenCV](http://opencv.org/)
+
+Components
+----------
+TooMassFun consists of the following utilities:
+
+* `PscConvert` (Scala): Parse 2MASS Point Source Catalog (PSC) data files
