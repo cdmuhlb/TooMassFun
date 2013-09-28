@@ -5,6 +5,9 @@ data from the [Two Micron All Sky Survey
 (2MASS)](http://www.ipac.caltech.edu/2mass/).  The focus is on inferring visible
 colors and rendering images of the sky.
 
+Disclaimer: The routines provided here are for exploratory purposes only and are
+**not** suitable for scientific work.
+
 Dependencies
 ------------
 TooMassFun contains components written in [Scala](http://www.scala-lang.org/),
