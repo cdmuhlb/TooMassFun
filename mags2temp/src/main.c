@@ -27,7 +27,7 @@ int main() {
 
   // Minimization setup
   gsl_min_fminimizer* minimizer =
-      gsl_min_fminimizer_alloc(gsl_min_fminimizer_brent); 
+      gsl_min_fminimizer_alloc(gsl_min_fminimizer_brent);
   gsl_function minFunc;
   minFunc.function = &fitResidual;
 
@@ -62,7 +62,7 @@ int main() {
     double hcktLo = 1.4e-7;     // T = 100,000 K
     double hcktHi = 1.4e-5;     // T = 1,000 K
     double hcktAns = 4.0e-6;
-    
+
     int status;
     status = myMinimizerSetup(minimizer, &minFunc, hcktAns,
         hcktLo, hcktHi);
@@ -91,7 +91,7 @@ int main() {
       ++nFailures;
     }
 
-    
+
     // Flower values
     /*
     const double jMag = jMagFromFlux(fParams.jVal);

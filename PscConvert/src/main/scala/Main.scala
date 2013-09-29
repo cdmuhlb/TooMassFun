@@ -115,7 +115,7 @@ class PscFile(file: File) {
         val sigmaHMag = fields(12).toDouble
         val kMag = fields(14).toDouble
         val sigmaKMag = fields(16).toDouble
-  
+
         val (jFlux, sigmaJFlux) =
             FilterSpec.jBand.integratedFlux(jMag, sigmaJMag)
         val (hFlux, sigmaHFlux) =

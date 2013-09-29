@@ -1,6 +1,6 @@
 #include "kernels.h"
 
-__device__ 
+__device__
 float2 cie_xy_from_temp(const float inTemp) {
   const float temp = min(max(inTemp, 1667.0f), 25000.0f);
   const float invT = 1.0f / temp;
@@ -25,7 +25,7 @@ float2 cie_xy_from_temp(const float inTemp) {
   return ans;
 }
 
-__device__ 
+__device__
 float3 cie_xyz_from_tempamp(const float2 tempamp) {
   const float2 xy = cie_xy_from_temp(tempamp.x);
   // TODO: Remove hard-coded constant
