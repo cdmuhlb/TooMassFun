@@ -55,7 +55,7 @@ class PointSourceDataset(pscPath: File) {
         val lat = buf.getFloat()
         val temp = buf.getFloat()
         val mag = buf.getFloat()
-        out.println(f"$lon%g $lat%g $temp%g $mag%g")
+        out.println(f"$lon%g $lat%g $mag%g $temp%g")
 
         buf.clear()
         nRead = inChan.read(buf)
