@@ -1,14 +1,61 @@
-import java.io.{BufferedOutputStream, BufferedReader, FileInputStream, FileOutputStream, InputStreamReader}
+import java.io.{BufferedReader, BufferedWriter, File, FileInputStream, FileOutputStream, InputStream, InputStreamReader, OutputStream, OutputStreamWriter, PrintWriter}
 import java.nio.{ByteBuffer, ByteOrder}
 import java.nio.channels.Channels
-import java.util.zip.GZIPInputStream
+import java.util.zip.{GZIPInputStream, GZIPOutputStream}
+import scala.sys.process.{BasicIO, Process, ProcessIO}
 
 object Main extends App {
-  require(args.length == 2)
-  val inputFile = args(0)
-  val outputFile = args(1)
-  val psc = new PscFile(inputFile)
-  psc.process(outputFile)
+  if (args.length != 2) {
+    Console.err.println("Usage: PscConvert <input_path> <output_path>")
+    System.exit(1)
+  }
+  val inputPath = new File(args(0))
+  val outputPath = new File(args(1))
+  val psds = new PointSourceDataset(inputPath)
+
+  val myPatch = "aaa"
+  psds.convertPatch(myPatch, outputPath)
+}
+
+class PointSourceDataset(pscPath: File) {
+  def convertPatch(patch: String, outputPath: File) {
+    def processOutput(in: InputStream) {
+      // Assumes 'in' is already buffered
+      val inChan = Channels.newChannel(in)
+
+      val nFields = 4
+      val fieldSize = 4
+      val buf = ByteBuffer.allocate(nFields*fieldSize).order(
+          ByteOrder.nativeOrder)
+
+      val out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(
+          new GZIPOutputStream(new FileOutputStream(new File(
+          outputPath, s"cat_$patch.gz"))))))
+
+      var nRead = inChan.read(buf)
+      while (nRead >= 0) {
+        buf.flip()
+        val lon = buf.getFloat()
+        val lat = buf.getFloat()
+        val temp = buf.getFloat()
+        val mag = buf.getFloat()
+        out.println(f"$lon%g $lat%g $temp%g $mag%g")
+
+        buf.clear()
+        nRead = inChan.read(buf)
+      }
+
+      out.close()
+      inChan.close()
+    }
+
+    val psc = new PscFile(new File(pscPath, s"psc_$patch.gz"))
+    val workingDir = new File("../mags2temp")
+    val pb = Process.apply("bin/mags2temp", workingDir)
+    val pio = new ProcessIO(psc.process, processOutput, BasicIO.toStdErr)
+    // Block until completion
+    pb.run(pio).exitValue
+  }
 }
 
 object FilterSpec {
@@ -35,20 +82,23 @@ case class FilterSpec(lambdaIso: Double, sigmaLambdaIso: Double,
   }
 }
 
-class PscFile(filename: String) {
+class PscFile(file: File) {
   private def fieldsDefined(fields: Array[String]): Boolean = {
     (fields(6) != "\\N") && (fields(8) != "\\N") &&
       (fields(10) != "\\N") && (fields(12) != "\\N") &&
       (fields(14) != "\\N") && (fields(16) != "\\N")
   }
 
-  def process(outputFilename: String): Unit = {
-    val buf = ByteBuffer.allocate(6*4).order(ByteOrder.LITTLE_ENDIAN)
-    val outChan = Channels.newChannel(new BufferedOutputStream(
-        new FileOutputStream(outputFilename)))
+  def process(out: OutputStream): Unit = {
+    val nFields = 8
+    val fieldSize = 4
+    val buf = ByteBuffer.allocate(nFields*fieldSize).order(
+        ByteOrder.nativeOrder)
+    // Assumes 'out' is already buffered
+    val outChan = Channels.newChannel(out)
 
     val br = new BufferedReader(new InputStreamReader(new GZIPInputStream(
-      new FileInputStream(filename))))
+      new FileInputStream(file))))
     var line = br.readLine()
     var lineNo = 0
 
@@ -57,6 +107,8 @@ class PscFile(filename: String) {
       if (fieldsDefined(fields)) {
         buf.clear()
 
+        val lon = fields(0).toDouble
+        val lat = fields(1).toDouble
         val jMag = fields(6).toDouble
         val sigmaJMag = fields(8).toDouble
         val hMag = fields(10).toDouble
@@ -71,6 +123,8 @@ class PscFile(filename: String) {
         val (kFlux, sigmaKFlux) =
             FilterSpec.kBand.integratedFlux(kMag, sigmaKMag)
 
+        buf.putFloat(lon.toFloat)
+        buf.putFloat(lat.toFloat)
         buf.putFloat(jFlux.toFloat)
         buf.putFloat(sigmaJFlux.toFloat)
         buf.putFloat(hFlux.toFloat)
