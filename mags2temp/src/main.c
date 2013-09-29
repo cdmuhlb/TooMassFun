@@ -15,12 +15,7 @@
 #include "MagUtils.h"
 #include "PlanckUtils.h"
 
-int main(int argc, char** argv) {
-  if (argc != 3) {
-    fprintf(stderr, "Usage: mags2temp <input_file> <output_file>\n");
-    return EXIT_FAILURE;
-  }
-
+int main() {
   gsl_integration_glfixed_table* gltable =
       gsl_integration_glfixed_table_alloc(6);
 
@@ -45,22 +40,22 @@ int main(int argc, char** argv) {
   fParams.kParams = &kParams;
 
   // Read data
-  const int nFields = 6;
-  const char* inputFilename = argv[1];
-  const char* outputFilename = argv[2];
-  FILE* in = fopen(inputFilename, "r");
-  BufferedFloatWriter* bfw = bfw_new(outputFilename);
+  const int nFields = 8;
+  FILE* in = stdin;
+  BufferedFloatWriter* bfw = bfw_new(stdout);
   float buf[nFields];
   int nRead = fread(buf, sizeof(float), nFields, in);
   int nRows = 0;
   int nFailures = 0;
   while (nRead == nFields) {
-    fParams.jVal = (double)buf[0];
-    fParams.jSig = (double)buf[1];
-    fParams.hVal = (double)buf[2];
-    fParams.hSig = (double)buf[3];
-    fParams.kVal = (double)buf[4];
-    fParams.kSig = (double)buf[5];
+    const float lon = buf[0];
+    const float lat = buf[1];
+    fParams.jVal = (double)buf[2];
+    fParams.jSig = (double)buf[3];
+    fParams.hVal = (double)buf[4];
+    fParams.hSig = (double)buf[5];
+    fParams.kVal = (double)buf[6];
+    fParams.kSig = (double)buf[7];
 
     // Fit values
     minFunc.params = &fParams;
@@ -82,13 +77,16 @@ int main(int argc, char** argv) {
 
       const double temp_final = tempFromHckt(hcktAns);
       const double amp_final = fitAmplitude(hcktAns, &fParams);
-      const double chisq_final = gsl_min_fminimizer_f_minimum(minimizer);
-      const double cieY = planckCieY(cmf, hcktAns, amp_final);
+      //const double chisq_final = gsl_min_fminimizer_f_minimum(minimizer);
+      //const double cieY = planckCieY(cmf, hcktAns, amp_final);
       const double aMag = magFromAmp(hcktAns, amp_final);
+      bfw_put(bfw, lon);
+      bfw_put(bfw, lat);
       bfw_put(bfw, (float)temp_final);
-      bfw_put(bfw, (float)cieY);
-      printf("%g %g %g %g\n", temp_final, aMag, cieY, chisq_final);
-
+      bfw_put(bfw, (float)aMag);
+      //bfw_put(bfw, (float)temp_final);
+      //bfw_put(bfw, (float)aMag);
+      //printf("%g %g %g %g\n", temp_final, aMag, cieY, chisq_final);
     } else {
       ++nFailures;
     }

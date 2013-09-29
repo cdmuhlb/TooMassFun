@@ -10,7 +10,7 @@ typedef struct {
   FILE* stream;
 } BufferedFloatWriter;
 
-BufferedFloatWriter* bfw_new(const char* filename);
+BufferedFloatWriter* bfw_new(FILE* out);
 void bfw_put(BufferedFloatWriter* bfw, float x);
 void bfw_close(BufferedFloatWriter* bfw);
 

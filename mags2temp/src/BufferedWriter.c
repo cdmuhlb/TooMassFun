@@ -2,13 +2,13 @@
 
 #include <stdlib.h>
 
-BufferedFloatWriter* bfw_new(const char* filename) {
+BufferedFloatWriter* bfw_new(FILE* out) {
   BufferedFloatWriter* bfw = (BufferedFloatWriter*)malloc(
       sizeof(BufferedFloatWriter));
   bfw->capacity = 4096;
   bfw->buffer = (float*)malloc(bfw->capacity*sizeof(float));
   bfw->size = 0;
-  bfw->stream = fopen(filename, "w");
+  bfw->stream = out;
   return bfw;
 }
 
