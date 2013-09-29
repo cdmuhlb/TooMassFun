@@ -2,6 +2,7 @@ import java.io.{BufferedReader, BufferedWriter, File, FileInputStream, FileOutpu
 import java.nio.{ByteBuffer, ByteOrder}
 import java.nio.channels.Channels
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
+import scala.collection.parallel.ForkJoinTaskSupport
 import scala.sys.process.{BasicIO, Process, ProcessIO}
 
 object Main extends App {
@@ -13,8 +14,23 @@ object Main extends App {
   val outputPath = new File(args(1))
   val psds = new PointSourceDataset(inputPath)
 
-  val myPatch = "aaa"
-  psds.convertPatch(myPatch, outputPath)
+  def patchName(index: Int): String = {
+    if (index < 57) {
+      val c3 = index % 26
+      val c2 = index / 26
+      "a" + ('a' + c2).toChar + ('a' + c3).toChar
+    } else {
+      val c3 = (index - 57) % 26
+      val c2 = (index - 57) / 26
+      "b" + ('a' + c2).toChar + ('a' + c3).toChar
+    }
+  }
+  val nPatches = 92
+  val patches = ((0 until nPatches) map patchName).par
+  val nTasks = (Runtime.getRuntime.availableProcessors - 1) / 3 + 1
+  patches.tasksupport = new ForkJoinTaskSupport(
+      new scala.concurrent.forkjoin.ForkJoinPool(nTasks))
+  for (patch ← patches) psds.convertPatch(patch, outputPath)
 }
 
 class PointSourceDataset(pscPath: File) {
