@@ -1,6 +1,18 @@
 #include "BufferedWriter.h"
 
+#include <assert.h>
 #include <stdlib.h>
+#include <string.h>
+
+BufferedFloatWriter* bfw_newFile(const char* dir, const char* file) {
+  const int pathLen = strlen(dir) + strlen(file) + 2;
+  char* pathBuf = (char*)malloc(pathLen);
+  const int ret = snprintf(pathBuf, pathLen, "%s/%s", dir, file);
+  assert(ret < pathLen);
+  FILE* out = fopen(pathBuf, "w");
+  free(pathBuf);
+  return bfw_new(out);
+}
 
 BufferedFloatWriter* bfw_new(FILE* out) {
   BufferedFloatWriter* bfw = (BufferedFloatWriter*)malloc(
