@@ -27,10 +27,17 @@ object Main extends App {
   }
   val nPatches = 92
   val patches = ((0 until nPatches) map patchName).par
-  val nTasks = (Runtime.getRuntime.availableProcessors - 1) / 3 + 1
+  //val nTasks = (Runtime.getRuntime.availableProcessors - 1) / 3 + 1
+  val nTasks = 6
   patches.tasksupport = new ForkJoinTaskSupport(
       new scala.concurrent.forkjoin.ForkJoinPool(nTasks))
-  for (patch ← patches) psds.convertPatch(patch, outputPath)
+  //val patches = List("acc")
+  //for (patch ← patches) psds.convertPatch(patch, outputPath)
+  for (patch ← patches) {
+    val patchOutDir = new File(outputPath, patch)
+    patchOutDir.mkdirs()
+    psds.convertPatch(patch, patchOutDir)
+  }
 }
 
 class PointSourceDataset(pscPath: File) {
@@ -67,8 +74,11 @@ class PointSourceDataset(pscPath: File) {
 
     val psc = new PscFile(new File(pscPath, s"psc_$patch.gz"))
     val workingDir = new File("../mags2temp")
-    val pb = Process.apply("bin/mags2temp", workingDir)
-    val pio = new ProcessIO(psc.process, processOutput, BasicIO.toStdErr)
+    //val pb = Process.apply("bin/mags2temp", workingDir)
+    val pb = Process.apply(Seq("bin/mags2temp", outputPath.getCanonicalPath),
+        workingDir)
+    //val pio = new ProcessIO(psc.process, processOutput, BasicIO.toStdErr)
+    val pio = new ProcessIO(psc.process, BasicIO.toStdOut, BasicIO.toStdErr)
     // Block until completion
     pb.run(pio).exitValue
   }
