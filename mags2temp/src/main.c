@@ -42,11 +42,26 @@ int main() {
   // Read data
   const int nFields = 8;
   FILE* in = stdin;
-  BufferedFloatWriter* bfw = bfw_new(stdout);
+  //BufferedFloatWriter* bfw = bfw_new(stdout);
+  FILE* lonFile = fopen("/tmp/tmfLon.dat", "w");
+  BufferedFloatWriter* lonOut = bfw_new(lonFile);
+  FILE* latFile = fopen("/tmp/tmfLat.dat", "w");
+  BufferedFloatWriter* latOut = bfw_new(latFile);
+  FILE* cieXFile = fopen("/tmp/tmfCieX.dat", "w");
+  BufferedFloatWriter* cieXOut = bfw_new(cieXFile);
+  FILE* cieYFile = fopen("/tmp/tmfCieY.dat", "w");
+  BufferedFloatWriter* cieYOut = bfw_new(cieYFile);
+  FILE* cieZFile = fopen("/tmp/tmfCieZ.dat", "w");
+  BufferedFloatWriter* cieZOut = bfw_new(cieZFile);
+
   float buf[nFields];
   int nRead = fread(buf, sizeof(float), nFields, in);
   int nRows = 0;
   int nFailures = 0;
+  float minLon = 360.0f;
+  float maxLon = 0.0f;
+  float minLat = 90.0f;
+  float maxLat = -90.0f;
   while (nRead == nFields) {
     const float lon = buf[0];
     const float lat = buf[1];
@@ -56,6 +71,12 @@ int main() {
     fParams.hSig = (double)buf[5];
     fParams.kVal = (double)buf[6];
     fParams.kSig = (double)buf[7];
+
+    // Statistics
+    if (lon < minLon) minLon = lon;
+    if (lon > maxLon) maxLon = lon;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
 
     // Fit values
     minFunc.params = &fParams;
@@ -75,15 +96,25 @@ int main() {
         status = gsl_min_test_interval(hcktLo, hcktHi, 1.0e-12, 1.0e-6);
       } while (status == GSL_CONTINUE);
 
-      const double temp_final = tempFromHckt(hcktAns);
+      //const double temp_final = tempFromHckt(hcktAns);
       const double amp_final = fitAmplitude(hcktAns, &fParams);
       //const double chisq_final = gsl_min_fminimizer_f_minimum(minimizer);
-      //const double cieY = planckCieY(cmf, hcktAns, amp_final);
-      const double aMag = magFromAmp(hcktAns, amp_final);
-      bfw_put(bfw, lon);
-      bfw_put(bfw, lat);
-      bfw_put(bfw, (float)temp_final);
-      bfw_put(bfw, (float)aMag);
+      const double cieX = planckCieX(cmf, hcktAns, amp_final);
+      const double cieY = planckCieY(cmf, hcktAns, amp_final);
+      const double cieZ = planckCieZ(cmf, hcktAns, amp_final);
+      //const double aMag = magFromAmp(hcktAns, amp_final);
+
+      bfw_put(lonOut, lon);
+      bfw_put(latOut, lat);
+      bfw_put(cieXOut, (float)cieX);
+      bfw_put(cieYOut, (float)cieY);
+      bfw_put(cieZOut, (float)cieZ);
+
+      //bfw_put(bfw, lon);
+      //bfw_put(bfw, lat);
+      //bfw_put(bfw, (float)temp_final);
+      //bfw_put(bfw, (float)aMag);
+
       //bfw_put(bfw, (float)temp_final);
       //bfw_put(bfw, (float)aMag);
       //printf("%g %g %g %g\n", temp_final, aMag, cieY, chisq_final);
@@ -122,9 +153,16 @@ int main() {
     nRead = fread(buf, sizeof(float), nFields, in);
     ++nRows;
   }
-  bfw_close(bfw);
+  bfw_close(lonOut);
+  bfw_close(latOut);
+  bfw_close(cieXOut);
+  bfw_close(cieYOut);
+  bfw_close(cieZOut);
+  //bfw_close(bfw);
   fclose(in);
   fprintf(stderr, "Failures: %d (out of %d)\n", nFailures, nRows);
+  fprintf(stderr, "Bounding box: %g x %g , %g x %g\n", minLon, maxLon,
+      minLat, maxLat);
 
   gsl_min_fminimizer_free(minimizer);
   cmf_free(cmf);
