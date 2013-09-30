@@ -69,10 +69,10 @@ int main(int argc, char** argv) {
   int nRead = fread(buf, sizeof(float), nFields, in);
   int nRows = 0;
   int nFailures = 0;
-  float minLon = 360.0f;
-  float maxLon = 0.0f;
-  float minLat = 90.0f;
-  float maxLat = -90.0f;
+  //float minLon = 360.0f;
+  //float maxLon = 0.0f;
+  //float minLat = 90.0f;
+  //float maxLat = -90.0f;
   while (nRead == nFields) {
     const float lon = buf[0];
     const float lat = buf[1];
@@ -84,10 +84,10 @@ int main(int argc, char** argv) {
     fParams.kSig = (double)buf[7];
 
     // Statistics
-    if (lon < minLon) minLon = lon;
-    if (lon > maxLon) maxLon = lon;
-    if (lat < minLat) minLat = lat;
-    if (lat > maxLat) maxLat = lat;
+    //if (lon < minLon) minLon = lon;
+    //if (lon > maxLon) maxLon = lon;
+    //if (lat < minLat) minLat = lat;
+    //if (lat > maxLat) maxLat = lat;
 
     // Fit values
     minFunc.params = &fParams;
@@ -172,8 +172,8 @@ int main(int argc, char** argv) {
   //bfw_close(bfw);
   fclose(in);
   fprintf(stderr, "Failures: %d (out of %d)\n", nFailures, nRows);
-  fprintf(stderr, "Bounding box: %g x %g , %g x %g\n", minLon, maxLon,
-      minLat, maxLat);
+  //fprintf(stderr, "Bounding box: %g x %g , %g x %g\n", minLon, maxLon,
+  //    minLat, maxLat);
 
   gsl_min_fminimizer_free(minimizer);
   cmf_free(cmf);
