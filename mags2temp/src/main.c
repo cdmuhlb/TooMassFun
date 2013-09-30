@@ -15,7 +15,13 @@
 #include "MagUtils.h"
 #include "PlanckUtils.h"
 
-int main() {
+int main(int argc, char** argv) {
+  if (argc != 2) {
+    fprintf(stderr, "Usage: mags2temp <output_dir>\n");
+    return EXIT_FAILURE;
+  }
+  const char* outputDir = argv[1];
+
   gsl_integration_glfixed_table* gltable =
       gsl_integration_glfixed_table_alloc(6);
 
@@ -43,7 +49,7 @@ int main() {
   const int nFields = 8;
   FILE* in = stdin;
   //BufferedFloatWriter* bfw = bfw_new(stdout);
-  FILE* lonFile = fopen("/tmp/tmfLon.dat", "w");
+  /*FILE* lonFile = fopen("/tmp/tmfLon.dat", "w");
   BufferedFloatWriter* lonOut = bfw_new(lonFile);
   FILE* latFile = fopen("/tmp/tmfLat.dat", "w");
   BufferedFloatWriter* latOut = bfw_new(latFile);
@@ -52,7 +58,12 @@ int main() {
   FILE* cieYFile = fopen("/tmp/tmfCieY.dat", "w");
   BufferedFloatWriter* cieYOut = bfw_new(cieYFile);
   FILE* cieZFile = fopen("/tmp/tmfCieZ.dat", "w");
-  BufferedFloatWriter* cieZOut = bfw_new(cieZFile);
+  BufferedFloatWriter* cieZOut = bfw_new(cieZFile);*/
+  BufferedFloatWriter* lonOut = bfw_newFile(outputDir, "tmfLon.dat");
+  BufferedFloatWriter* latOut = bfw_newFile(outputDir, "tmfLat.dat");
+  BufferedFloatWriter* cieXOut = bfw_newFile(outputDir, "tmfCieX.dat");
+  BufferedFloatWriter* cieYOut = bfw_newFile(outputDir, "tmfCieY.dat");
+  BufferedFloatWriter* cieZOut = bfw_newFile(outputDir, "tmfCieZ.dat");
 
   float buf[nFields];
   int nRead = fread(buf, sizeof(float), nFields, in);
