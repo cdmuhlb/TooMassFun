@@ -8,6 +8,11 @@
 
 #include "PlanckUtils.h"
 
+double cmf_integrate(const double* lambdas, const double* cmfs, int size,
+    gsl_function* func);
+double cmf_integratePlanck(const double* lambdas, const double* cmfs, int size,
+    double hc_kt, double amp);
+
 matchingTable* cmf_alloc() {
   // TODO: Avoid hard-coded values
   const char* filename = "share/lin2012xyz2e_5_7sf.txt";
@@ -38,24 +43,50 @@ matchingTable* cmf_alloc() {
   return cmf;
 }
 
-double cmf_cieY(matchingTable* cmf, gsl_function* func) {
+double cmf_integrate(const double* lambdas, const double* cmfs, const int size,
+    gsl_function* func) {
   double sum = 0.0;
-  for (int i=0; i<(cmf->size - 1); ++i) {
-    sum += (cmf->lambdas[i+1] - cmf->lambdas[i]) *
-        (cmf->cmfY[i+1]*GSL_FN_EVAL(func, cmf->lambdas[i+1]) +
-         cmf->cmfY[i]*GSL_FN_EVAL(func, cmf->lambdas[i]));
+  for (int i=0; i<(size - 1); ++i) {
+    sum += (lambdas[i+1] - lambdas[i]) *
+        (cmfs[i+1]*GSL_FN_EVAL(func, lambdas[i+1]) +
+         cmfs[i]*GSL_FN_EVAL(func, lambdas[i]));
   }
   return 0.5*sum;
 }
 
-double planckCieY(matchingTable* cmf, const double hc_kt, const double amp) {
+double cmf_integratePlanck(const double* lambdas, const double* cmfs,
+    const int size, const double hc_kt, const double amp) {
   double sum = 0.0;
-  for (int i=0; i<(cmf->size - 1); ++i) {
-    sum += (cmf->lambdas[i+1] - cmf->lambdas[i]) *
-        (cmf->cmfY[i+1]*evalPlanck(hc_kt, cmf->lambdas[i+1], amp) +
-         cmf->cmfY[i]*evalPlanck(hc_kt, cmf->lambdas[i], amp));
+  for (int i=0; i<(size - 1); ++i) {
+    sum += (lambdas[i+1] - lambdas[i]) *
+        (cmfs[i+1]*evalPlanck(hc_kt, lambdas[i+1], amp) +
+         cmfs[i]*evalPlanck(hc_kt, lambdas[i], amp));
   }
   return 0.5*sum;
+}
+
+double cmf_cieX(matchingTable* cmf, gsl_function* func) {
+  return cmf_integrate(cmf->lambdas, cmf->cmfX, cmf->size, func);
+}
+
+double cmf_cieY(matchingTable* cmf, gsl_function* func) {
+  return cmf_integrate(cmf->lambdas, cmf->cmfY, cmf->size, func);
+}
+
+double cmf_cieZ(matchingTable* cmf, gsl_function* func) {
+  return cmf_integrate(cmf->lambdas, cmf->cmfZ, cmf->size, func);
+}
+
+double planckCieX(matchingTable* cmf, const double hc_kt, const double amp) {
+  return cmf_integratePlanck(cmf->lambdas, cmf->cmfX, cmf->size, hc_kt, amp);
+}
+
+double planckCieY(matchingTable* cmf, const double hc_kt, const double amp) {
+  return cmf_integratePlanck(cmf->lambdas, cmf->cmfY, cmf->size, hc_kt, amp);
+}
+
+double planckCieZ(matchingTable* cmf, const double hc_kt, const double amp) {
+  return cmf_integratePlanck(cmf->lambdas, cmf->cmfZ, cmf->size, hc_kt, amp);
 }
 
 void cmf_free(matchingTable* cmf) {
