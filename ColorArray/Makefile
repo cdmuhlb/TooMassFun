@@ -41,8 +41,8 @@ bin/colorarray: bin build/main.o build/kernels.o
 bin:
 	mkdir -p bin
 
-build/main.o: build src/main.cc src/utils.h src/kernels.h
-	$(CXX) -c src/main.cc -o $@ $(INCLUDES) $(CXXFLAGS)
+build/main.o: build src/main.cu src/utils.h src/kernels.h
+	$(NVCC) -c src/main.cu -o $@ $(OPENCV_INCLUDE) $(NVCCFLAGS)
 
 build/kernels.o: build src/kernels.cu src/kernels.h src/utils.h
 	$(NVCC) -c src/kernels.cu -o $@ $(NVCCFLAGS)
