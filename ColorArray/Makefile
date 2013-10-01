@@ -26,7 +26,8 @@ OPENCV_INCLUDE =
 # Includes and libraries
 CUDA_INCLUDE = -I $(CUDA_PATH)/include
 OPENCV_LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui
-INCLUDES = $(OPENCV_INCLUDE) $(CUDA_INCLUDE)
+NVCC_INCLUDES = $(OPENCV_INCLUDE)
+CXX_INCLUDES = $(NVCC_INCLUDES) $(CUDA_INCLUDE)
 LIBRARIES = $(OPENCV_LIB) $(OPENCV_LIBS)
 
 
@@ -35,20 +36,17 @@ LIBRARIES = $(OPENCV_LIB) $(OPENCV_LIBS)
 
 all: bin/colorarray
 
-bin/colorarray: bin build/main.o build/kernels.o
+bin/colorarray: build/main.o build/kernels.o
+	mkdir -p bin
 	$(NVCC) build/main.o build/kernels.o -o $@ $(LIBRARIES) $(NVCCFLAGS)
 
-bin:
-	mkdir -p bin
-
-build/main.o: build src/main.cu src/utils.h src/kernels.h
-	$(NVCC) -c src/main.cu -o $@ $(OPENCV_INCLUDE) $(NVCCFLAGS)
-
-build/kernels.o: build src/kernels.cu src/kernels.h src/utils.h
-	$(NVCC) -c src/kernels.cu -o $@ $(NVCCFLAGS)
-
-build:
+build/main.o: src/main.cu src/kernels.h src/utils.h
 	mkdir -p build
+	$(NVCC) -c src/main.cu -o $@ $(NVCC_INCLUDES) $(NVCCFLAGS)
+
+build/kernels.o: src/kernels.cu src/kernels.h src/utils.h
+	mkdir -p build
+	$(NVCC) -c src/kernels.cu -o $@ $(NVCC_INCLUDES) $(NVCCFLAGS)
 
 clean:
 	rm -f build/main.o build/kernels.o bin/colorarray
