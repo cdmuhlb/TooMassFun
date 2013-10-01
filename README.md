@@ -24,8 +24,9 @@ Components
 ----------
 TooMassFun consists of the following utilities:
 
-* `PscConvert` (Scala): Parse 2MASS Point Source Catalog (PSC) data files
+* `PscConvert` (Scala): Parse 2MASS Point Source Catalog (PSC) data files and
+  provide input to `mags2temp`
 * `mags2temp` (C): Perform a black-body fit on J,H,Ks magnitudes to estimate
   color and brightness
-* `ColorArray` (C++, CUDA): Visualize the colors of point sources as an sRGB
-  image
+* `SkyRender` (C++, CUDA): Render images of the night sky using output of
+  `mags2temp`

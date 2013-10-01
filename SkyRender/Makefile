@@ -34,9 +34,9 @@ LIBRARIES = $(OPENCV_LIB) $(OPENCV_LIBS)
 # Targets
 # =======
 
-all: bin/colorarray
+all: bin/skyrender
 
-bin/colorarray: build/main.o build/kernels.o
+bin/skyrender: build/main.o build/kernels.o
 	mkdir -p bin
 	$(NVCC) build/main.o build/kernels.o -o $@ $(LIBRARIES) $(NVCCFLAGS)
 
@@ -49,4 +49,4 @@ build/kernels.o: src/kernels.cu src/kernels.h src/utils.h
 	$(NVCC) -c src/kernels.cu -o $@ $(NVCC_INCLUDES) $(NVCCFLAGS)
 
 clean:
-	rm -f build/main.o build/kernels.o bin/colorarray
+	rm -f build/main.o build/kernels.o bin/skyrender

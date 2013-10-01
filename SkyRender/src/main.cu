@@ -21,7 +21,7 @@ std::string patchName(int patchNum);
 int main(int argc, char** argv) {
   // Process arguments
   if (argc != 4) {
-    fprintf(stderr, "Usage: colorarray <input_dir> <output_file> <Y_max>\n");
+    fprintf(stderr, "Usage: skyrender <input_dir> <output_file> <Y_max>\n");
     return EXIT_FAILURE;
   }
   const std::string input_dir = std::string(argv[1]);

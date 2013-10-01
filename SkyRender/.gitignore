@@ -2,4 +2,4 @@
 *.o
 
 # Executables
-/bin/colorarray
+/bin/skyrender
