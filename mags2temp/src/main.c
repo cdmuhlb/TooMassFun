@@ -48,17 +48,6 @@ int main(int argc, char** argv) {
   // Read data
   const int nFields = 8;
   FILE* in = stdin;
-  //BufferedFloatWriter* bfw = bfw_new(stdout);
-  /*FILE* lonFile = fopen("/tmp/tmfLon.dat", "w");
-  BufferedFloatWriter* lonOut = bfw_new(lonFile);
-  FILE* latFile = fopen("/tmp/tmfLat.dat", "w");
-  BufferedFloatWriter* latOut = bfw_new(latFile);
-  FILE* cieXFile = fopen("/tmp/tmfCieX.dat", "w");
-  BufferedFloatWriter* cieXOut = bfw_new(cieXFile);
-  FILE* cieYFile = fopen("/tmp/tmfCieY.dat", "w");
-  BufferedFloatWriter* cieYOut = bfw_new(cieYFile);
-  FILE* cieZFile = fopen("/tmp/tmfCieZ.dat", "w");
-  BufferedFloatWriter* cieZOut = bfw_new(cieZFile);*/
   BufferedFloatWriter* lonOut = bfw_newFile(outputDir, "tmfLon.dat");
   BufferedFloatWriter* latOut = bfw_newFile(outputDir, "tmfLat.dat");
   BufferedFloatWriter* cieXOut = bfw_newFile(outputDir, "tmfCieX.dat");
@@ -69,10 +58,6 @@ int main(int argc, char** argv) {
   int nRead = fread(buf, sizeof(float), nFields, in);
   int nRows = 0;
   int nFailures = 0;
-  //float minLon = 360.0f;
-  //float maxLon = 0.0f;
-  //float minLat = 90.0f;
-  //float maxLat = -90.0f;
   while (nRead == nFields) {
     const float lon = buf[0];
     const float lat = buf[1];
@@ -83,17 +68,12 @@ int main(int argc, char** argv) {
     fParams.kVal = (double)buf[6];
     fParams.kSig = (double)buf[7];
 
-    // Statistics
-    //if (lon < minLon) minLon = lon;
-    //if (lon > maxLon) maxLon = lon;
-    //if (lat < minLat) minLat = lat;
-    //if (lat > maxLat) maxLat = lat;
 
-    // Fit values
+    // Option 1: Fit for black-body temperature
     minFunc.params = &fParams;
     double hcktLo = 1.4e-7;     // T = 100,000 K
     double hcktHi = 1.4e-5;     // T = 1,000 K
-    double hcktAns = 4.0e-6;
+    double hcktAns = 4.0e-6;    // T = 3,600 K
 
     int status;
     status = myMinimizerSetup(minimizer, &minFunc, hcktAns,
@@ -110,70 +90,62 @@ int main(int argc, char** argv) {
       //const double temp_final = tempFromHckt(hcktAns);
       const double amp_final = fitAmplitude(hcktAns, &fParams);
       //const double chisq_final = gsl_min_fminimizer_f_minimum(minimizer);
+      //const double aMag = magFromAmp(hcktAns, amp_final);
       const double cieX = planckCieX(cmf, hcktAns, amp_final);
       const double cieY = planckCieY(cmf, hcktAns, amp_final);
       const double cieZ = planckCieZ(cmf, hcktAns, amp_final);
-      //const double aMag = magFromAmp(hcktAns, amp_final);
 
       bfw_put(lonOut, lon);
       bfw_put(latOut, lat);
       bfw_put(cieXOut, (float)cieX);
       bfw_put(cieYOut, (float)cieY);
       bfw_put(cieZOut, (float)cieZ);
-
-      //bfw_put(bfw, lon);
-      //bfw_put(bfw, lat);
-      //bfw_put(bfw, (float)temp_final);
-      //bfw_put(bfw, (float)aMag);
-
-      //bfw_put(bfw, (float)temp_final);
-      //bfw_put(bfw, (float)aMag);
-      //printf("%g %g %g %g\n", temp_final, aMag, cieY, chisq_final);
     } else {
       ++nFailures;
     }
 
-
-    // Flower values
     /*
+    // Option 2: Get T_eff (Flower 1996, Torres 2007) from B-V
+    //   (Bilir et al. 2008)
     const double jMag = jMagFromFlux(fParams.jVal);
     const double hMag = hMagFromFlux(fParams.hVal);
     const double kMag = kMagFromFlux(fParams.kVal);
     const double bt = flowerTemp(jMag, hMag, kMag);
     if ((bt > 1000.0) && (bt < 100000.0)) {
       const double bhckt = hcktFromTemp(bt);
+
+      // Take V-band magnitude from J-band
       //const double bm = jMag;
       //const double ba = ampFromMag(bhckt, bm);
-      //const double by = planckCieY(cmf, bhckt, ba);
-      //bfw_put(bfw, (float)bt);
-      //bfw_put(bfw, (float)by);
-      //printf("%g %g %g %g\n", bt, bm, by, 0.0);
 
       // Fit amplitude from Flower temperature
       const double ba2 = fitAmplitude(bhckt, &fParams);
-      const double by2 = planckCieY(cmf, bhckt, ba2);
-      const double bm2 = magFromAmp(bhckt, ba2);
-      bfw_put(bfw, (float)bt);
-      bfw_put(bfw, (float)by2);
-      printf("%g %g %g %g\n", bt, bm2, by2, 0.0);
+      //const double bm2 = magFromAmp(bhckt, ba2);
+
+      const double cieX = planckCieX(cmf, bhckt, ba2);
+      const double cieY = planckCieY(cmf, bhckt, ba2);
+      const double cieZ = planckCieZ(cmf, bhckt, ba2);
+      bfw_put(lonOut, lon);
+      bfw_put(latOut, lat);
+      bfw_put(cieXOut, (float)cieX);
+      bfw_put(cieYOut, (float)cieY);
+      bfw_put(cieZOut, (float)cieZ);
     } else {
       ++nFailures;
     }
     */
 
-    nRead = fread(buf, sizeof(float), nFields, in);
+    // Loop update
     ++nRows;
+    nRead = fread(buf, sizeof(float), nFields, in);
   }
+  fclose(in);
   bfw_close(lonOut);
   bfw_close(latOut);
   bfw_close(cieXOut);
   bfw_close(cieYOut);
   bfw_close(cieZOut);
-  //bfw_close(bfw);
-  fclose(in);
   fprintf(stderr, "Failures: %d (out of %d)\n", nFailures, nRows);
-  //fprintf(stderr, "Bounding box: %g x %g , %g x %g\n", minLon, maxLon,
-  //    minLat, maxLat);
 
   gsl_min_fminimizer_free(minimizer);
   cmf_free(cmf);
